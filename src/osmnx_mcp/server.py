@@ -1,6 +1,14 @@
 import networkx as nx
 from fastmcp import FastMCP
-from osmnx_mcp.tools import routing, stats, spatial, features, enrichment, graph_loading
+from osmnx_mcp.tools import (
+    routing,
+    stats,
+    spatial,
+    features,
+    enrichment,
+    graph_loading,
+    visualization,
+)
 from osmnx_mcp.resources import graph as graph_resources
 
 _graph: nx.MultiDiGraph | None = None
@@ -23,6 +31,7 @@ def create_server(name: str = "osmnx-mcp") -> FastMCP:
     spatial.register(mcp, get_graph)
     features.register(mcp, get_graph)
     enrichment.register(mcp, get_graph)
+    visualization.register(mcp, get_graph)
     graph_resources.register(mcp, get_graph)
     return mcp
 
