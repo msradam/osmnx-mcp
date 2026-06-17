@@ -76,8 +76,10 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
     @mcp.tool
     def graph_info() -> dict:
         """
-        Return metadata about the currently loaded graph.
-        Call this first to check whether a graph is available before using other tools.
+        Return metadata about the currently loaded graph, including available edge
+        and node attributes. Always call this (or street_names / edge_attribute_values)
+        to read data already in the graph — do NOT use features_from_* for data the
+        graph already contains.
         """
         try:
             G = get_graph()
@@ -92,10 +94,53 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
             "east": max(d["x"] for _, d in G.nodes(data=True)),
             "west": min(d["x"] for _, d in G.nodes(data=True)),
         }
+        edge_attrs = sorted({k for _, _, d in G.edges(data=True) for k in d})
+        node_attrs = sorted({k for _, d in G.nodes(data=True) for k in d})
         return {
             "loaded": True,
             "node_count": len(G.nodes),
             "edge_count": len(G.edges),
             "crs": str(G.graph.get("crs", "epsg:4326")),
             "bbox": bbox,
+            "edge_attributes": edge_attrs,
+            "node_attributes": node_attrs,
         }
+
+    @mcp.tool
+    def street_names() -> dict:
+        """
+        Return all unique street names in the loaded graph.
+
+        Reads the 'name' attribute directly from graph edges — instant, no network call.
+        """
+        G = get_graph()
+        names: set[str] = set()
+        for _, _, data in G.edges(data=True):
+            val = data.get("name")
+            if val is None:
+                continue
+            if isinstance(val, list):
+                names.update(str(v) for v in val if v)
+            else:
+                names.add(str(val))
+        return {"street_names": sorted(names), "count": len(names)}
+
+    @mcp.tool
+    def edge_attribute_values(attribute: str) -> dict:
+        """
+        Return all unique values for a named edge attribute in the loaded graph.
+
+        Reads directly from graph edges — instant, no network call.
+        Use graph_info() first to see which attributes are available.
+        """
+        G = get_graph()
+        values: set[str] = set()
+        for _, _, data in G.edges(data=True):
+            val = data.get(attribute)
+            if val is None:
+                continue
+            if isinstance(val, list):
+                values.update(str(v) for v in val if v is not None)
+            else:
+                values.add(str(val))
+        return {"attribute": attribute, "values": sorted(values), "count": len(values)}
