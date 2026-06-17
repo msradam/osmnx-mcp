@@ -1,4 +1,5 @@
 import io
+from pathlib import Path
 from typing import Callable
 
 import matplotlib
@@ -9,13 +10,22 @@ from fastmcp.utilities.types import Image
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
+_SAVE_DIR = Path.home() / "Downloads"
 
-def _fig_to_image(fig: plt.Figure, dpi: int = 150) -> Image:
+
+def _fig_to_image(fig: plt.Figure, filename: str, dpi: int = 150) -> list:
     buf = io.BytesIO()
     fig.savefig(buf, format="png", dpi=dpi, bbox_inches="tight")
     plt.close(fig)
     buf.seek(0)
-    return Image(data=buf.read(), format="png")
+    data = buf.read()
+
+    out_path = _SAVE_DIR / filename
+    out_path.write_bytes(data)
+
+    # ImageContent renders in the tool accordion in Claude Desktop.
+    # The path lets the model surface the file location in its text response.
+    return [Image(data=data, format="png"), {"saved_to": str(out_path)}]
 
 
 def register(mcp: FastMCP, get_graph: Callable) -> None:
@@ -27,11 +37,12 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
         edge_color: str = "#333333",
         bgcolor: str = "white",
         node_size: float = 0,
-    ) -> Image:
+    ) -> list:
         """
         Render the active street network as a static map image.
 
-        Returns a PNG image suitable for display in Claude Desktop.
+        Returns a PNG saved to ~/Downloads/. Tell the user the saved_to path
+        so they can open it — Claude Desktop renders the preview in the tool accordion.
         """
         G = get_graph()
         fig, _ = ox.plot_graph(
@@ -43,7 +54,7 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
             show=False,
             close=False,
         )
-        return _fig_to_image(fig)
+        return _fig_to_image(fig, "osmnx_graph.png")
 
     @mcp.tool
     def plot_route_from_path(
@@ -51,14 +62,12 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
         route_color: str = "#cc0000",
         figsize_w: float = 10.0,
         figsize_h: float = 10.0,
-    ) -> Image:
+    ) -> list:
         """
         Plot a route given a node sequence from shortest_path or k_shortest_paths.
 
         route: list of node IDs as returned by shortest_path['path'].
-        Use this to visualize a route you've already computed — compose with
-        shortest_path or k_shortest_paths to inspect the path before plotting.
-        Returns a PNG image.
+        Returns a PNG saved to ~/Downloads/. Tell the user the saved_to path.
         """
         G = get_graph()
         fig, _ = ox.plot_graph_route(
@@ -76,7 +85,7 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
             show=False,
             close=False,
         )
-        return _fig_to_image(fig)
+        return _fig_to_image(fig, "osmnx_route.png")
 
     @mcp.tool
     def plot_route(
@@ -88,14 +97,14 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
         route_color: str = "#cc0000",
         figsize_w: float = 10.0,
         figsize_h: float = 10.0,
-    ) -> Image:
+    ) -> list:
         """
         Plot the shortest path between two coordinates on the active street network.
 
         Convenience wrapper — use shortest_path + plot_route_from_path if you need
         to inspect or compare the path before rendering.
         weight: 'length' (meters) or 'travel_time' (seconds, requires enriched graph).
-        Returns a PNG image with the route highlighted.
+        Returns a PNG saved to ~/Downloads/. Tell the user the saved_to path.
         """
         G = get_graph()
         orig = ox.nearest_nodes(G, orig_lng, orig_lat)
@@ -118,7 +127,7 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
             show=False,
             close=False,
         )
-        return _fig_to_image(fig)
+        return _fig_to_image(fig, "osmnx_route.png")
 
     @mcp.tool
     def plot_orientation(
@@ -126,12 +135,12 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
         figsize_w: float = 5.0,
         figsize_h: float = 5.0,
         title: str = "Street Orientation",
-    ) -> Image:
+    ) -> list:
         """
         Plot a polar histogram of street orientations (rose diagram).
 
         Reveals the grid structure (or lack thereof) of the street network.
-        Returns a PNG image.
+        Returns a PNG saved to ~/Downloads/. Tell the user the saved_to path.
         """
         G = get_graph()
         fig, _ = ox.plot_orientation(
@@ -142,7 +151,7 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
             show=False,
             close=False,
         )
-        return _fig_to_image(fig)
+        return _fig_to_image(fig, "osmnx_orientation.png")
 
     @mcp.tool
     def plot_figure_ground(
@@ -151,11 +160,11 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
         edge_color: str = "white",
         bgcolor: str = "#111111",
         edge_linewidth: float = 1.5,
-    ) -> Image:
+    ) -> list:
         """
         Render the street network as a high-contrast figure-ground diagram.
 
-        Returns a PNG image suitable as a cartographic visualization.
+        Returns a PNG saved to ~/Downloads/. Tell the user the saved_to path.
         """
         G = get_graph()
         fig, _ = ox.plot_graph(
@@ -168,4 +177,4 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
             show=False,
             close=False,
         )
-        return _fig_to_image(fig)
+        return _fig_to_image(fig, "osmnx_figure_ground.png")
