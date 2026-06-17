@@ -10,7 +10,7 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
         """
         Impute speed values (kph) on all edges using OSM maxspeed tags and heuristics.
 
-        Mutates the mounted graph in place. Call before add_edge_travel_times.
+        Mutates the active graph in place. Call before add_edge_travel_times.
         Returns edge count updated.
         """
         G = get_graph()
@@ -25,8 +25,7 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
         Compute travel time in seconds for each edge from length and speed_kph.
 
         Requires add_edge_speeds to have been called first.
-        Mutates the mounted graph in place.
-        Returns edge count updated.
+        Mutates the active graph in place. Returns edge count updated.
         """
         G = get_graph()
         G = ox.add_edge_travel_times(G)
@@ -39,8 +38,7 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
         """
         Add compass bearing (degrees) to each edge.
 
-        Mutates the mounted graph in place.
-        Returns edge count updated.
+        Mutates the active graph in place. Returns edge count updated.
         """
         G = get_graph()
         G = ox.add_edge_bearings(G)
@@ -53,8 +51,8 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
         """
         Add elevation grade (rise/run) to each edge using node elevation data.
 
-        Requires nodes to have an 'elevation' attribute (fetch separately via elevation API).
-        Mutates the mounted graph in place. Returns edge count updated.
+        Requires nodes to have an 'elevation' attribute.
+        Mutates the active graph in place. Returns edge count updated.
         """
         G = get_graph()
         G = ox.add_edge_grades(G)
@@ -66,4 +64,6 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
 def _update_graph(G) -> None:
     import osmnx_mcp.server as _server
 
-    _server._graph = G
+    name = _server.get_active_name()
+    if name is not None:
+        _server.set_graph(G, name)

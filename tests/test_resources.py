@@ -39,7 +39,7 @@ async def test_metadata_resource(mcp_server, graph):
 async def test_node_resource(mcp_server, graph):
     node_id = next(iter(graph.nodes))
     async with Client(mcp_server) as client:
-        result = await client.read_resource(f"graph://nodes/{node_id}")
+        result = await client.read_resource(f"graph://default/nodes/{node_id}")
         data = json.loads(result[0].text)
         assert data["node_id"] == node_id
 
@@ -48,7 +48,7 @@ async def test_node_resource(mcp_server, graph):
 async def test_edge_resource(mcp_server, graph):
     u, v, key = next(iter(graph.edges(keys=True)))
     async with Client(mcp_server) as client:
-        result = await client.read_resource(f"graph://edges/{u}/{v}/{key}")
+        result = await client.read_resource(f"graph://default/edges/{u}/{v}/{key}")
         data = json.loads(result[0].text)
         assert data["u"] == u
         assert data["v"] == v

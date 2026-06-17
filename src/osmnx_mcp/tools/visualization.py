@@ -29,9 +29,9 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
         node_size: float = 0,
     ) -> Image:
         """
-        Render the loaded street network as a static map image.
+        Render the active street network as a static map image.
 
-        Returns a PNG image suitable for display.
+        Returns a PNG image suitable for display in Claude Desktop.
         """
         G = get_graph()
         fig, _ = ox.plot_graph(
@@ -40,6 +40,39 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
             edge_color=edge_color,
             bgcolor=bgcolor,
             node_size=node_size,
+            show=False,
+            close=False,
+        )
+        return _fig_to_image(fig)
+
+    @mcp.tool
+    def plot_route_from_path(
+        route: list[int],
+        route_color: str = "#cc0000",
+        figsize_w: float = 10.0,
+        figsize_h: float = 10.0,
+    ) -> Image:
+        """
+        Plot a route given a node sequence from shortest_path or k_shortest_paths.
+
+        route: list of node IDs as returned by shortest_path['path'].
+        Use this to visualize a route you've already computed — compose with
+        shortest_path or k_shortest_paths to inspect the path before plotting.
+        Returns a PNG image.
+        """
+        G = get_graph()
+        fig, _ = ox.plot_graph_route(
+            G,
+            route,
+            figsize=(figsize_w, figsize_h),
+            route_color=route_color,
+            route_linewidth=4,
+            route_alpha=0.8,
+            orig_dest_size=100,
+            node_size=0,
+            bgcolor="white",
+            edge_color="#cccccc",
+            edge_linewidth=0.5,
             show=False,
             close=False,
         )
@@ -57,8 +90,10 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
         figsize_h: float = 10.0,
     ) -> Image:
         """
-        Plot the shortest path between two coordinates on the street network.
+        Plot the shortest path between two coordinates on the active street network.
 
+        Convenience wrapper — use shortest_path + plot_route_from_path if you need
+        to inspect or compare the path before rendering.
         weight: 'length' (meters) or 'travel_time' (seconds, requires enriched graph).
         Returns a PNG image with the route highlighted.
         """

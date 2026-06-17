@@ -11,19 +11,18 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
         north: float, south: float, east: float, west: float
     ) -> dict:
         """
-        Truncate the mounted graph to nodes within a bounding box.
+        Truncate the active graph to nodes within a bounding box.
 
         Returns summary of resulting node and edge counts.
+        The truncated graph replaces the active graph under the same name.
         """
         G = get_graph()
-        # osmnx 2.x uses ox.truncate.truncate_graph_bbox(G, bbox=(north, south, east, west))
         try:
             G_trunc = ox.truncate.truncate_graph_bbox(
                 G, bbox=(north, south, east, west)
             )
         except TypeError:
             G_trunc = ox.truncate.truncate_graph_bbox(G, north, south, east, west)
-        # update module-level graph
         _update_graph(G_trunc)
         return {"node_count": len(G_trunc.nodes), "edge_count": len(G_trunc.edges)}
 
@@ -32,10 +31,10 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
         lng: float, lat: float, dist_m: float, weight: str = "length"
     ) -> dict:
         """
-        Truncate the mounted graph to nodes within dist_m of coordinate (lng, lat).
+        Truncate the active graph to nodes within dist_m of coordinate (lng, lat).
 
         weight: edge attribute used to measure distance ('length' or 'travel_time').
-        Returns summary of resulting node and edge counts.
+        The truncated graph replaces the active graph under the same name.
         """
         G = get_graph()
         node = ox.nearest_nodes(G, lng, lat)
@@ -46,7 +45,7 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
     @mcp.tool
     def largest_component() -> dict:
         """
-        Reduce the mounted graph to its largest weakly connected component.
+        Reduce the active graph to its largest weakly connected component.
 
         Returns node and edge counts of the retained component.
         """
@@ -61,7 +60,7 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
         Consolidate nearby intersection nodes within tolerance meters.
 
         tolerance: max distance in meters between nodes to merge.
-        Returns node and edge counts after consolidation.
+        The consolidated graph replaces the active graph under the same name.
         """
         G = get_graph()
         G_cons = ox.consolidate_intersections(G, tolerance=tolerance)
@@ -70,7 +69,8 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
 
 
 def _update_graph(G: nx.MultiDiGraph) -> None:
-    """Replace the module-level graph used by get_graph."""
     import osmnx_mcp.server as _server
 
-    _server._graph = G
+    name = _server.get_active_name()
+    if name is not None:
+        _server.set_graph(G, name)

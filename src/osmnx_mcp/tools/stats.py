@@ -23,7 +23,7 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
     @mcp.tool
     def basic_stats(area_km2: float | None = None) -> dict:
         """
-        Compute basic street network statistics for the mounted graph.
+        Compute basic street network statistics for the active graph.
 
         area_km2: optional study area in square kilometers for density metrics.
         Returns counts, lengths, and density stats as a flat dict.
@@ -38,37 +38,32 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
         """
         Compute the orientation entropy of the street network.
 
-        Adds edge bearings automatically if not already present.
-        Returns entropy (nats). Higher values indicate more grid-like or disordered networks.
+        Adds edge bearings if not already present and stores them back to the
+        active graph so subsequent calls are instant.
+        Returns entropy (nats). Higher values indicate more disordered networks.
         """
+        import osmnx_mcp.server as _server
+
         G = get_graph()
         sample_edges = list(G.edges(data=True))[:1]
         if not sample_edges or "bearing" not in sample_edges[0][2]:
             G = ox.add_edge_bearings(G)
-            import osmnx_mcp.server as _server
-
-            _server._graph = G
+            name = _server.get_active_name()
+            if name is not None:
+                _server.set_graph(G, name)
         entropy = ox.bearing.orientation_entropy(G)
         return {"orientation_entropy": float(entropy)}
 
     @mcp.tool
     def streets_per_node_avg() -> dict:
-        """
-        Compute the average number of streets per node (intersection degree) in the graph.
-
-        Returns the mean streets-per-node count across all nodes.
-        """
+        """Compute the average number of streets per intersection node."""
         G = get_graph()
         result = ox.stats.basic_stats(G)
         return {"streets_per_node_avg": float(result.get("streets_per_node_avg", 0))}
 
     @mcp.tool
     def streets_per_node_proportions() -> dict:
-        """
-        Compute the proportion of nodes with each street count (degree distribution).
-
-        Returns a dict mapping street count to the fraction of nodes with that count.
-        """
+        """Compute the proportion of nodes with each street count (degree distribution)."""
         G = get_graph()
         result = ox.stats.basic_stats(G)
         raw = result.get("streets_per_node_proportions", {})
