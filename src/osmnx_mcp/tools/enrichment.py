@@ -65,4 +65,5 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
 
 def _update_graph(G) -> None:
     import osmnx_mcp.server as _server
+
     _server._graph = G

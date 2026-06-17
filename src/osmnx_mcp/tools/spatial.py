@@ -18,7 +18,9 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
         G = get_graph()
         # osmnx 2.x uses ox.truncate.truncate_graph_bbox(G, bbox=(north, south, east, west))
         try:
-            G_trunc = ox.truncate.truncate_graph_bbox(G, bbox=(north, south, east, west))
+            G_trunc = ox.truncate.truncate_graph_bbox(
+                G, bbox=(north, south, east, west)
+            )
         except TypeError:
             G_trunc = ox.truncate.truncate_graph_bbox(G, north, south, east, west)
         # update module-level graph
@@ -70,4 +72,5 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
 def _update_graph(G: nx.MultiDiGraph) -> None:
     """Replace the module-level graph used by get_graph."""
     import osmnx_mcp.server as _server
+
     _server._graph = G

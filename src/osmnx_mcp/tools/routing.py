@@ -34,9 +34,16 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
         dest = ox.nearest_nodes(G, dest_lng, dest_lat)
         path = ox.shortest_path(G, orig, dest, weight=weight)
         if path is None:
-            return {"path": None, "node_count": 0, "length_m": None, "travel_time_s": None}
+            return {
+                "path": None,
+                "node_count": 0,
+                "length_m": None,
+                "travel_time_s": None,
+            }
         length = sum(G[u][v][0].get("length", 0) for u, v in zip(path[:-1], path[1:]))
-        travel_time = sum(G[u][v][0].get("travel_time", 0) for u, v in zip(path[:-1], path[1:]))
+        travel_time = sum(
+            G[u][v][0].get("travel_time", 0) for u, v in zip(path[:-1], path[1:])
+        )
         return {
             "path": [int(n) for n in path],
             "node_count": len(path),
@@ -65,8 +72,12 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
         paths = list(ox.k_shortest_paths(G, orig, dest, k, weight=weight))
         results = []
         for path in paths:
-            length = sum(G[u][v][0].get("length", 0) for u, v in zip(path[:-1], path[1:]))
-            results.append({"path": [int(n) for n in path], "length_m": round(length, 1)})
+            length = sum(
+                G[u][v][0].get("length", 0) for u, v in zip(path[:-1], path[1:])
+            )
+            results.append(
+                {"path": [int(n) for n in path], "length_m": round(length, 1)}
+            )
         return results
 
     @mcp.tool

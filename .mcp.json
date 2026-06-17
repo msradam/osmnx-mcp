@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "osmnx-mcp": {
+      "command": "uv",
+      "args": ["run", "osmnx-mcp"],
+      "cwd": "/Users/amsrahman/osmnx-mcp",
+      "type": "stdio"
+    }
+  }
+}

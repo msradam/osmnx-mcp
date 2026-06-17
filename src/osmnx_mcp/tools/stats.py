@@ -46,6 +46,7 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
         if not sample_edges or "bearing" not in sample_edges[0][2]:
             G = ox.add_edge_bearings(G)
             import osmnx_mcp.server as _server
+
             _server._graph = G
         entropy = ox.bearing.orientation_entropy(G)
         return {"orientation_entropy": float(entropy)}
@@ -72,6 +73,5 @@ def register(mcp: FastMCP, get_graph: Callable) -> None:
         result = ox.stats.basic_stats(G)
         raw = result.get("streets_per_node_proportions", {})
         return {
-            str(k): v.item() if hasattr(v, "item") else float(v)
-            for k, v in raw.items()
+            str(k): v.item() if hasattr(v, "item") else float(v) for k, v in raw.items()
         }

@@ -6,6 +6,7 @@ directly via the FastMCP in-process client.
 Run with:
     uv run python examples/quickstart.py
 """
+
 import asyncio
 
 import osmnx as ox
